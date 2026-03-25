@@ -119,40 +119,46 @@ export default function HistoryPage() {
                 </span>
               </div>
               <div className="space-y-2 ml-4">
-                {scan.opportunities?.map((opp, j) => (
+                {scan.opportunities?.map((opp, j) => {
+                  // Support both flat (API) and nested (history file) formats
+                  const marketInfo = opp.market_info || opp;
+                  const oppMeta = opp.opportunity || opp;
+                  const direction = (oppMeta.edge_direction || "YES").toUpperCase();
+                  return (
                   <div key={j} className="glass rounded-lg p-3">
                     <div className="flex items-center justify-between gap-3">
                       <a
-                        href={opp.market_info.url}
+                        href={marketInfo.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-text-primary hover:text-accent transition-colors line-clamp-1 flex-1"
                       >
-                        {opp.market_info.title}
+                        {marketInfo.title}
                       </a>
                       <div className="flex items-center gap-2 shrink-0">
                         <span
                           className={`font-bold ${
-                            opp.edge_direction === "YES"
+                            direction === "YES"
                               ? "text-accent"
                               : "text-danger"
                           }`}
                         >
-                          {formatEdge(opp.edge)}
+                          {formatEdge(oppMeta.edge)}
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded text-xs ${
-                            opp.edge_direction === "YES"
+                            direction === "YES"
                               ? "bg-accent/10 text-accent"
                               : "bg-danger/10 text-danger"
                           }`}
                         >
-                          {opp.edge_direction}
+                          {direction}
                         </span>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
