@@ -21,6 +21,12 @@ export type Conviction = "HIGH" | "MEDIUM" | "LOW";
 export interface Opportunity {
   market_info: MarketInfo;
   forecast: Forecast;
+  opportunity?: {
+    edge: number;
+    edge_direction: EdgeDirection;
+    expected_value: number;
+    conviction: Conviction;
+  };
   edge: number;
   edge_direction: EdgeDirection;
   conviction: Conviction;
