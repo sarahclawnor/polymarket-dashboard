@@ -2,7 +2,222 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { HistoryDatesData, DayHistory, Opportunity } from "@/types";
-import { formatEdge, formatVolume, timeAgo, convictionColor } from "@/lib/utils";
+import { formatEdge, formatVolume, convictionColor } from "@/lib/utils";
+
+function getMarketInfo(opp: Opportunity) {
+  return opp.market_info || opp;
+}
+
+function getOppMeta(opp: Opportunity) {
+  return opp.opportunity || opp;
+}
+
+function getForecast(opp: Opportunity) {
+  return opp.forecast || opp;
+}
+
+function OpportunityCard({ opp, index }: { opp: Opportunity; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const marketInfo = getMarketInfo(opp);
+  const oppMeta = getOppMeta(opp);
+  const forecast = getForecast(opp);
+  const direction = (oppMeta.edge_direction || "YES").toUpperCase();
+  const conviction = (oppMeta.conviction || "MEDIUM").toUpperCase();
+
+  const convictionIcon =
+    conviction === "HIGH" ? "🔥" : conviction === "MEDIUM" ? "⚡" : "💡";
+
+  const marketYes = marketInfo.probability
+    ? (marketInfo.probability * 100).toFixed(1)
+    : null;
+  const marketNo = marketYes ? (100 - parseFloat(marketYes)).toFixed(1) : null;
+  const forecastYes = forecast.probability
+    ? (forecast.probability * 100).toFixed(1)
+    : null;
+  const forecastNo = forecastYes
+    ? (100 - parseFloat(forecastYes)).toFixed(1)
+    : null;
+
+  return (
+    <div className="glass rounded-lg overflow-hidden">
+      {/* Summary row - clickable */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full text-left p-3 hover:bg-white/[0.02] transition-colors flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-xs text-muted shrink-0 w-5 text-right">
+            #{index + 1}
+          </span>
+          <span
+            className={`text-sm line-clamp-1 ${
+              expanded ? "text-accent" : "text-text-primary"
+            }`}
+          >
+            {marketInfo.title}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-text-secondary hidden sm:block">
+            {formatVolume(marketInfo.volume)}
+          </span>
+          <span
+            className={`font-bold ${
+              direction === "YES" ? "text-accent" : "text-danger"
+            }`}
+          >
+            {formatEdge(oppMeta.edge)}
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-semibold ${
+              direction === "YES"
+                ? "bg-accent/10 text-accent border border-accent/20"
+                : "bg-danger/10 text-danger border border-danger/20"
+            }`}
+          >
+            {direction}
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted transition-transform ${
+              expanded ? "rotate-180" : ""
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
+      </button>
+
+      {/* Expanded detail view */}
+      {expanded && (
+        <div className="px-3 pb-4 pt-1 border-t border-white/5">
+          {/* Market title with link */}
+          <div className="mb-3">
+            <a
+              href={marketInfo.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-accent hover:underline"
+            >
+              {convictionIcon} {marketInfo.title}
+              <svg
+                className="inline w-3 h-3 ml-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
+            <span
+              className={`ml-2 px-2 py-0.5 rounded text-xs font-bold ${
+                conviction === "HIGH"
+                  ? "bg-accent/10 text-accent"
+                  : conviction === "MEDIUM"
+                  ? "bg-warning/10 text-warning"
+                  : "bg-white/5 text-muted"
+              }`}
+            >
+              {conviction}
+            </span>
+          </div>
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            <div className="bg-surface-light rounded-lg p-2.5">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-0.5">
+                📈 Market
+              </p>
+              <p className="text-sm font-bold">
+                {marketYes !== null ? (
+                  <>
+                    <span className="text-accent">YES {marketYes}%</span>
+                    <span className="text-muted mx-1">|</span>
+                    <span className="text-danger">NO {marketNo}%</span>
+                  </>
+                ) : (
+                  <span className="text-muted">N/A</span>
+                )}
+              </p>
+            </div>
+            <div className="bg-surface-light rounded-lg p-2.5">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-0.5">
+                🤖 Forecast
+              </p>
+              <p className="text-sm font-bold">
+                {forecastYes !== null ? (
+                  <>
+                    <span className="text-accent">YES {forecastYes}%</span>
+                    <span className="text-muted mx-1">|</span>
+                    <span className="text-danger">NO {forecastNo}%</span>
+                  </>
+                ) : (
+                  <span className="text-muted">N/A</span>
+                )}
+              </p>
+            </div>
+            <div className="bg-surface-light rounded-lg p-2.5">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-0.5">
+                💰 Edge
+              </p>
+              <p
+                className={`text-sm font-bold ${
+                  direction === "YES" ? "text-accent" : "text-danger"
+                }`}
+              >
+                {formatEdge(oppMeta.edge)} → Bet on {direction}
+              </p>
+            </div>
+            <div className="bg-surface-light rounded-lg p-2.5">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-0.5">
+                📊 Stats
+              </p>
+              <p className="text-xs text-text-secondary">
+                Vol: {formatVolume(marketInfo.volume)}
+                <br />
+                Conf:{" "}
+                {forecast.confidence
+                  ? (forecast.confidence * 100).toFixed(0)
+                  : "—"}
+                %
+                {marketInfo.days_until_close != null && (
+                  <>
+                    {" "}
+                    · Closes: {marketInfo.days_until_close}d
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* AI Reasoning */}
+          {forecast.reasoning && (
+            <div className="bg-surface-light rounded-lg p-3">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-1.5">
+                🧠 AI Reasoning
+              </p>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                {forecast.reasoning}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function HistoryPage() {
   const [dates, setDates] = useState<string[]>([]);
@@ -40,7 +255,8 @@ export default function HistoryPage() {
       .finally(() => setDayLoading(false));
   }, [selectedDate]);
 
-  const totalOpps = dayData?.scans?.reduce((s, sc) => s + sc.opportunities_found, 0) ?? 0;
+  const totalOpps =
+    dayData?.scans?.reduce((s, sc) => s + sc.opportunities_found, 0) ?? 0;
   const totalScans = dayData?.scans?.length ?? 0;
 
   return (
@@ -119,46 +335,9 @@ export default function HistoryPage() {
                 </span>
               </div>
               <div className="space-y-2 ml-4">
-                {scan.opportunities?.map((opp, j) => {
-                  // Support both flat (API) and nested (history file) formats
-                  const marketInfo = opp.market_info || opp;
-                  const oppMeta = opp.opportunity || opp;
-                  const direction = (oppMeta.edge_direction || "YES").toUpperCase();
-                  return (
-                  <div key={j} className="glass rounded-lg p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <a
-                        href={marketInfo.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-text-primary hover:text-accent transition-colors line-clamp-1 flex-1"
-                      >
-                        {marketInfo.title}
-                      </a>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span
-                          className={`font-bold ${
-                            direction === "YES"
-                              ? "text-accent"
-                              : "text-danger"
-                          }`}
-                        >
-                          {formatEdge(oppMeta.edge)}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs ${
-                            direction === "YES"
-                              ? "bg-accent/10 text-accent"
-                              : "bg-danger/10 text-danger"
-                          }`}
-                        >
-                          {direction}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  );
-                })}
+                {scan.opportunities?.map((opp, j) => (
+                  <OpportunityCard key={j} opp={opp} index={j} />
+                ))}
               </div>
             </div>
           ))}
